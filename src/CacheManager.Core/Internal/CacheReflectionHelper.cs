@@ -10,7 +10,7 @@ namespace CacheManager.Core.Internal
 {
     internal static class CacheReflectionHelper
     {
-        internal static ILoggerFactory CreateLoggerFactory(ICacheManagerConfiguration configuration)
+        internal static ILoggerFactory CreateLoggerFactory<K>(ICacheManagerConfiguration<K> configuration)
         {
             NotNull(configuration, nameof(configuration));
 
@@ -30,7 +30,7 @@ namespace CacheManager.Core.Internal
             return (ILoggerFactory)CreateInstance(configuration.LoggerFactoryType, args);
         }
 
-        internal static ICacheSerializer CreateSerializer(ICacheManagerConfiguration configuration, ILoggerFactory loggerFactory)
+        internal static ICacheSerializer<K> CreateSerializer<K>(ICacheManagerConfiguration<K> configuration, ILoggerFactory loggerFactory)
         {
             NotNull(configuration, nameof(configuration));
             NotNull(loggerFactory, nameof(loggerFactory));
@@ -38,13 +38,13 @@ namespace CacheManager.Core.Internal
 #if !NETSTANDARD2
             if (configuration.SerializerType == null)
             {
-                return new BinaryCacheSerializer();
+                return new BinaryCacheSerializer<K>();
             }
 #endif
 
             if (configuration.SerializerType != null)
             {
-                CheckImplements<ICacheSerializer>(configuration.SerializerType);
+                CheckImplements<ICacheSerializer<K>>(configuration.SerializerType);
 
                 var args = new object[] { configuration, loggerFactory };
                 if (configuration.SerializerTypeArguments != null)
@@ -52,13 +52,13 @@ namespace CacheManager.Core.Internal
                     args = configuration.SerializerTypeArguments.Concat(args).ToArray();
                 }
 
-                return (ICacheSerializer)CreateInstance(configuration.SerializerType, args);
+                return (ICacheSerializer<K>)CreateInstance(configuration.SerializerType, args);
             }
 
             return null;
         }
 
-        internal static CacheBackplane CreateBackplane(ICacheManagerConfiguration configuration, ILoggerFactory loggerFactory)
+        internal static CacheBackplane<K> CreateBackplane<K>(ICacheManagerConfiguration<K> configuration, ILoggerFactory loggerFactory)
         {
             NotNull(configuration, nameof(configuration));
             NotNull(loggerFactory, nameof(loggerFactory));
@@ -71,7 +71,7 @@ namespace CacheManager.Core.Internal
                         "At least one cache handle must be marked as the backplane source if a backplane is defined via configuration.");
                 }
 
-                CheckExtends<CacheBackplane>(configuration.BackplaneType);
+                CheckExtends<CacheBackplane<K>>(configuration.BackplaneType);
 
                 var args = new object[] { configuration, loggerFactory };
                 if (configuration.BackplaneTypeArguments != null)
@@ -79,23 +79,23 @@ namespace CacheManager.Core.Internal
                     args = configuration.BackplaneTypeArguments.Concat(args).ToArray();
                 }
 
-                return (CacheBackplane)CreateInstance(configuration.BackplaneType, args);
+                return (CacheBackplane<K>)CreateInstance(configuration.BackplaneType, args);
             }
 
             return null;
         }
 
-        internal static ICollection<BaseCacheHandle<TCacheValue>> CreateCacheHandles<TCacheValue>(
-            BaseCacheManager<TCacheValue> manager,
+        internal static ICollection<BaseCacheHandle<K, TCacheValue>> CreateCacheHandles<K, TCacheValue>(
+            BaseCacheManager<K, TCacheValue> manager,
             ILoggerFactory loggerFactory,
-            ICacheSerializer serializer)
+            ICacheSerializer<K> serializer)
         {
             NotNull(manager, nameof(manager));
             NotNull(loggerFactory, nameof(loggerFactory));
 
             var logger = loggerFactory.CreateLogger(nameof(CacheReflectionHelper));
-            var managerConfiguration = manager.Configuration as ICacheManagerConfiguration;
-            var handles = new List<BaseCacheHandle<TCacheValue>>();
+            var managerConfiguration = manager.Configuration as ICacheManagerConfiguration<K>;
+            var handles = new List<BaseCacheHandle<K, TCacheValue>>();
 
             foreach (var handleConfiguration in managerConfiguration.CacheHandleConfigurations)
             {
@@ -117,10 +117,16 @@ namespace CacheManager.Core.Internal
                 // if the configured type doesn't have a generic type definition ( <T> is not
                 // defined )
 
-                if (handleType.GetTypeInfo().IsGenericTypeDefinition)
-
+                if (handleType.IsGenericTypeDefinition)
                 {
-                    instanceType = handleType.MakeGenericType(new Type[] { typeof(TCacheValue) });
+                    if (handleType.GetGenericArguments().Length == 1)
+                    {
+                        instanceType = handleType.MakeGenericType(new Type[] { typeof(TCacheValue) });
+                    }
+                    else
+                    {
+                        instanceType = handleType.MakeGenericType(new Type[] { typeof(K), typeof(TCacheValue) });
+                    }
                 }
                 else
                 {
@@ -138,7 +144,7 @@ namespace CacheManager.Core.Internal
                     types.Add(serializer);
                 }
 
-                var instance = CreateInstance(instanceType, types.ToArray()) as BaseCacheHandle<TCacheValue>;
+                var instance = CreateInstance(instanceType, types.ToArray()) as BaseCacheHandle<K, TCacheValue>;
 
                 if (instance == null)
                 {
@@ -167,7 +173,7 @@ namespace CacheManager.Core.Internal
 
         internal static object CreateInstance(Type instanceType, object[] knownInstances)
         {
-            var constructors = instanceType.GetTypeInfo().DeclaredConstructors;
+            var constructors = instanceType.GetConstructors();
 
             constructors = constructors
                 .Where(p => !p.IsStatic && p.IsPublic)
@@ -223,7 +229,7 @@ namespace CacheManager.Core.Internal
                 {
                     var paramValue = instancesCopy
                         .Where(p => p != null)
-                        .FirstOrDefault(p => param.ParameterType.GetTypeInfo().IsAssignableFrom(p.GetType().GetTypeInfo()));
+                        .FirstOrDefault(p => param.ParameterType.IsAssignableFrom(p.GetType()));
 
                     if (paramValue == null)
                     {
@@ -263,21 +269,21 @@ namespace CacheManager.Core.Internal
 
         private static IEnumerable<Type> GetGenericBaseTypes(this Type type)
         {
-            var baseType = type.GetTypeInfo().BaseType;
-            if (baseType == null || !baseType.GetTypeInfo().IsGenericType)
+            var baseType = type.BaseType;
+            while (baseType != null)
             {
-                return Enumerable.Empty<Type>();
+                if (baseType.IsGenericType)
+                {
+                    yield return baseType.IsGenericTypeDefinition ? baseType : baseType.GetGenericTypeDefinition();
+                }
+                baseType = baseType.BaseType;
             }
-
-            var genericBaseType = baseType.GetTypeInfo().IsGenericTypeDefinition ? baseType : baseType.GetGenericTypeDefinition();
-            return Enumerable.Repeat(genericBaseType, 1)
-                .Concat(baseType.GetGenericBaseTypes());
         }
 
         private static void ValidateCacheHandleGenericTypeArguments(Type handle)
         {
             // not really needed due to the generic type from callees being restricted.
-            if (!handle.GetGenericBaseTypes().Any(p => p == typeof(BaseCacheHandle<>)))
+            if (!handle.GetGenericBaseTypes().Any(p => p == typeof(BaseCacheHandle<,>)))
             {
                 throw new InvalidOperationException(
                     string.Format(
@@ -309,23 +315,14 @@ namespace CacheManager.Core.Internal
 
         private static void CheckExtends<TValid>(Type type)
         {
-            var baseType = type.BaseType;
-
-            while (baseType != typeof(object))
+            if (!typeof(TValid).IsAssignableFrom(type))
             {
-                if (baseType == typeof(TValid))
-                {
-                    return;
-                }
-
-                baseType = baseType.BaseType;
+                throw new InvalidOperationException(
+                    string.Format(
+                        "Type {0} does not extend from {1}.",
+                        type.FullName,
+                        typeof(TValid).Name));
             }
-
-            throw new InvalidOperationException(
-                string.Format(
-                    "Type {0} does not extend from {1}.",
-                    type.FullName,
-                    typeof(TValid).Name));
         }
     }
 }

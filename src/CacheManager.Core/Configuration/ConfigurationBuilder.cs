@@ -21,14 +21,14 @@ namespace CacheManager.Core
     /// </para>
     /// </summary>
     /// <see cref="CacheFactory"/>
-    public class ConfigurationBuilder : ConfigurationBuilderCachePart
+    public class ConfigurationBuilder<K> : ConfigurationBuilderCachePart<K>
     {
         private const string Hours = "h";
         private const string Minutes = "m";
         private const string Seconds = "s";
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigurationBuilder"/> class
+        /// Initializes a new instance of the <see cref="ConfigurationBuilder<K>"/> class
         /// which provides fluent configuration methods.
         /// </summary>
         public ConfigurationBuilder()
@@ -37,7 +37,7 @@ namespace CacheManager.Core
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigurationBuilder"/> class
+        /// Initializes a new instance of the <see cref="ConfigurationBuilder<K>"/> class
         /// which provides fluent configuration methods.
         /// </summary>
         /// <param name="name">The name of the cache manager.</param>
@@ -49,25 +49,25 @@ namespace CacheManager.Core
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigurationBuilder"/> class
+        /// Initializes a new instance of the <see cref="ConfigurationBuilder<K>"/> class
         /// which provides fluent configuration methods.
         /// Creates a builder which allows to modify the existing <paramref name="forConfiguration"/>.
         /// </summary>
         /// <param name="forConfiguration">The configuration the builder should be instantiated for.</param>
-        public ConfigurationBuilder(ICacheManagerConfiguration forConfiguration)
-            : base((CacheManagerConfiguration)forConfiguration)
+        public ConfigurationBuilder(ICacheManagerConfiguration<K> forConfiguration)
+            : base((CacheManagerConfiguration<K>)forConfiguration)
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConfigurationBuilder"/> class
+        /// Initializes a new instance of the <see cref="ConfigurationBuilder<K>"/> class
         /// which provides fluent configuration methods.
         /// Creates a builder which allows to modify the existing <paramref name="forConfiguration"/>.
         /// </summary>
         /// <param name="name">The name of the cache manager.</param>
         /// <param name="forConfiguration">The configuration the builder should be instantiated for.</param>
-        public ConfigurationBuilder(string name, ICacheManagerConfiguration forConfiguration)
-            : base((CacheManagerConfiguration)forConfiguration)
+        public ConfigurationBuilder(string name, ICacheManagerConfiguration<K> forConfiguration)
+            : base((CacheManagerConfiguration<K>)forConfiguration)
         {
             NotNullOrWhiteSpace(name, nameof(name));
             Configuration.Name = name;
@@ -85,11 +85,11 @@ namespace CacheManager.Core
         /// The configuration settings to define the cache handles and other properties.
         /// </param>
         /// <returns>The <see cref="ICacheManagerConfiguration"/>.</returns>
-        public static ICacheManagerConfiguration BuildConfiguration(Action<ConfigurationBuilderCachePart> settings)
+        public static ICacheManagerConfiguration<K> BuildConfiguration(Action<ConfigurationBuilderCachePart<K>> settings)
         {
             NotNull(settings, nameof(settings));
 
-            var part = new ConfigurationBuilder();
+            var part = new ConfigurationBuilder<K>();
             settings(part);
             return part.Configuration;
         }
@@ -107,12 +107,12 @@ namespace CacheManager.Core
         /// The configuration settings to define the cache handles and other properties.
         /// </param>
         /// <returns>The <see cref="ICacheManagerConfiguration"/>.</returns>
-        public static ICacheManagerConfiguration BuildConfiguration(string name, Action<ConfigurationBuilderCachePart> settings)
+        public static ICacheManagerConfiguration<K> BuildConfiguration(string name, Action<ConfigurationBuilderCachePart<K>> settings)
         {
             NotNullOrWhiteSpace(name, nameof(name));
             NotNull(settings, nameof(settings));
 
-            var part = new ConfigurationBuilder();
+            var part = new ConfigurationBuilder<K>();
             settings(part);
             part.Configuration.Name = name;
             return part.Configuration;
@@ -128,7 +128,7 @@ namespace CacheManager.Core
         /// <param name="configName">The name of the cache element within the config file.</param>
         /// <returns>The <c>CacheManagerConfiguration</c></returns>
         /// <see cref="ICacheManagerConfiguration"/>
-        public static ICacheManagerConfiguration LoadConfiguration(string configName) =>
+        public static ICacheManagerConfiguration<K> LoadConfiguration(string configName) =>
             LoadConfiguration(CacheManagerSection.DefaultSectionName, configName);
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace CacheManager.Core
         /// <param name="configName">The name of the cache element within the config file.</param>
         /// <returns>The <c>CacheManagerConfiguration</c></returns>
         /// <see cref="ICacheManagerConfiguration"/>
-        public static ICacheManagerConfiguration LoadConfiguration(string sectionName, string configName)
+        public static ICacheManagerConfiguration<K> LoadConfiguration(string sectionName, string configName)
         {
             NotNullOrWhiteSpace(sectionName, nameof(sectionName));
             NotNullOrWhiteSpace(configName, nameof(configName));
@@ -170,7 +170,7 @@ namespace CacheManager.Core
         /// If the file specified by <paramref name="configFileName"/> does not exist.
         /// </exception>
         /// <see cref="ICacheManagerConfiguration"/>
-        public static ICacheManagerConfiguration LoadConfigurationFile(string configFileName, string configName) =>
+        public static ICacheManagerConfiguration<K> LoadConfigurationFile(string configFileName, string configName) =>
             LoadConfigurationFile(configFileName, CacheManagerSection.DefaultSectionName, configName);
 
         /// <summary>
@@ -191,7 +191,7 @@ namespace CacheManager.Core
         /// If the file specified by <paramref name="configFileName"/> does not exist.
         /// </exception>
         /// <see cref="ICacheManagerConfiguration"/>
-        public static ICacheManagerConfiguration LoadConfigurationFile(string configFileName, string sectionName, string configName)
+        public static ICacheManagerConfiguration<K> LoadConfigurationFile(string configFileName, string sectionName, string configName)
         {
             NotNullOrWhiteSpace(configFileName, nameof(configFileName));
             NotNullOrWhiteSpace(sectionName, nameof(sectionName));
@@ -214,7 +214,7 @@ namespace CacheManager.Core
             return LoadFromSection(section, configName);
         }
 
-        internal static CacheManagerConfiguration LoadFromSection(CacheManagerSection section, string configName)
+        internal static CacheManagerConfiguration<K> LoadFromSection(CacheManagerSection section, string configName)
         {
             NotNullOrWhiteSpace(configName, nameof(configName));
 
@@ -223,7 +223,7 @@ namespace CacheManager.Core
             Ensure(handleDefsSection.Count > 0, "There are no cache handles defined.");
 
             // load handle definitions as lookup
-            var handleDefs = new SortedList<string, CacheHandleConfiguration>();
+            var handleDefs = new SortedList<string, CacheHandleConfiguration<K>>();
             foreach (var def in handleDefsSection)
             {
                 //// don't validate at this point, otherwise we will get an exception if any defined handle doesn't match with the requested type...
@@ -232,7 +232,7 @@ namespace CacheManager.Core
                 var normId = def.Id.ToUpper(CultureInfo.InvariantCulture);
                 handleDefs.Add(
                     normId,
-                    new CacheHandleConfiguration(def.Id)
+                    new CacheHandleConfiguration<K>(def.Id)
                     {
                         HandleType = def.HandleType,
                         ExpirationMode = def.DefaultExpirationMode,
@@ -258,7 +258,7 @@ namespace CacheManager.Core
             }
 
             // build configuration
-            var cfg = new CacheManagerConfiguration()
+            var cfg = new CacheManagerConfiguration<K>()
             {
                 UpdateMode = managerCfg.UpdateMode,
                 MaxRetries = maxRetries ?? 50,
@@ -306,7 +306,7 @@ namespace CacheManager.Core
 
                 var handleDef = handleDefs[normRefId];
 
-                var handle = new CacheHandleConfiguration(handleItem.Name)
+                var handle = new CacheHandleConfiguration<K>(handleItem.Name)
                 {
                     HandleType = handleDef.HandleType,
                     ExpirationMode = handleDef.ExpirationMode,
@@ -397,11 +397,11 @@ namespace CacheManager.Core
     /// Used to build a <c>CacheHandleConfiguration</c>.
     /// </summary>
     /// <see cref="CacheManagerConfiguration"/>
-    public sealed class ConfigurationBuilderCacheHandlePart
+    public sealed class ConfigurationBuilderCacheHandlePart<K>
     {
-        private ConfigurationBuilderCachePart _parent;
+        private ConfigurationBuilderCachePart<K> _parent;
 
-        internal ConfigurationBuilderCacheHandlePart(CacheHandleConfiguration cfg, ConfigurationBuilderCachePart parentPart)
+        internal ConfigurationBuilderCacheHandlePart(CacheHandleConfiguration<K> cfg, ConfigurationBuilderCachePart<K> parentPart)
         {
             Configuration = cfg;
             _parent = parentPart;
@@ -412,15 +412,15 @@ namespace CacheManager.Core
         /// multiple cache handles.
         /// </summary>
         /// <value>The parent builder part.</value>
-        public ConfigurationBuilderCachePart And => _parent;
+        public ConfigurationBuilderCachePart<K> And => _parent;
 
-        internal CacheHandleConfiguration Configuration { get; }
+        internal CacheHandleConfiguration<K> Configuration { get; }
 
         /// <summary>
         /// Hands back the new <see cref="CacheManagerConfiguration"/> instance.
         /// </summary>
         /// <returns>The <see cref="CacheManagerConfiguration"/>.</returns>
-        public ICacheManagerConfiguration Build()
+        public ICacheManagerConfiguration<K> Build()
         {
             return _parent.Build();
         }
@@ -429,7 +429,7 @@ namespace CacheManager.Core
         /// Disables performance counters for this cache handle.
         /// </summary>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCacheHandlePart DisablePerformanceCounters()
+        public ConfigurationBuilderCacheHandlePart<K> DisablePerformanceCounters()
         {
             Configuration.EnablePerformanceCounters = false;
             return this;
@@ -440,7 +440,7 @@ namespace CacheManager.Core
         /// <para>This also disables performance counters as statistics are required for the counters.</para>
         /// </summary>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCacheHandlePart DisableStatistics()
+        public ConfigurationBuilderCacheHandlePart<K> DisableStatistics()
         {
             Configuration.EnableStatistics = false;
             Configuration.EnablePerformanceCounters = false;
@@ -452,7 +452,7 @@ namespace CacheManager.Core
         /// <para>This also enables statistics, as this is required for performance counters.</para>
         /// </summary>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCacheHandlePart EnablePerformanceCounters()
+        public ConfigurationBuilderCacheHandlePart<K> EnablePerformanceCounters()
         {
             Configuration.EnablePerformanceCounters = true;
             Configuration.EnableStatistics = true;
@@ -464,7 +464,7 @@ namespace CacheManager.Core
         /// <para>The statistics can be accessed via cacheHandle.Stats.GetStatistic.</para>
         /// </summary>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCacheHandlePart EnableStatistics()
+        public ConfigurationBuilderCacheHandlePart<K> EnableStatistics()
         {
             Configuration.EnableStatistics = true;
             return this;
@@ -483,7 +483,7 @@ namespace CacheManager.Core
         /// Thrown if expiration mode is not 'None' and timeout is zero.
         /// </exception>
         /// <seealso cref="ExpirationMode"/>
-        public ConfigurationBuilderCacheHandlePart WithExpiration(ExpirationMode expirationMode, TimeSpan timeout)
+        public ConfigurationBuilderCacheHandlePart<K> WithExpiration(ExpirationMode expirationMode, TimeSpan timeout)
         {
             // fixed #192 (was missing check for "Default" mode)
             if (expirationMode != ExpirationMode.None && expirationMode != ExpirationMode.Default && timeout == TimeSpan.Zero)
@@ -501,14 +501,14 @@ namespace CacheManager.Core
     /// Used to build a <c>CacheManagerConfiguration</c>.
     /// </summary>
     /// <see cref="CacheManagerConfiguration"/>
-    public class ConfigurationBuilderCachePart
+    public class ConfigurationBuilderCachePart<K>
     {
         internal ConfigurationBuilderCachePart()
         {
-            Configuration = new CacheManagerConfiguration();
+            Configuration = new CacheManagerConfiguration<K>();
         }
 
-        internal ConfigurationBuilderCachePart(CacheManagerConfiguration forConfiguration)
+        internal ConfigurationBuilderCachePart(CacheManagerConfiguration<K> forConfiguration)
         {
             NotNull(forConfiguration, nameof(forConfiguration));
             Configuration = forConfiguration;
@@ -518,7 +518,7 @@ namespace CacheManager.Core
         /// Gets the configuration.
         /// </summary>
         /// <value>The configuration.</value>
-        internal CacheManagerConfiguration Configuration { get; }
+        internal CacheManagerConfiguration<K> Configuration { get; }
 
         /// <summary>
         /// Configures the backplane for the cache manager.
@@ -537,7 +537,7 @@ namespace CacheManager.Core
         /// <param name="args">Additional arguments the type might need to get initialized.</param>
         /// <returns>The builder instance.</returns>
         /// <exception cref="System.ArgumentNullException">If <paramref name="configurationKey"/> is null.</exception>
-        public ConfigurationBuilderCachePart WithBackplane(Type backplaneType, string configurationKey, params object[] args)
+        public ConfigurationBuilderCachePart<K> WithBackplane(Type backplaneType, string configurationKey, params object[] args)
         {
             NotNull(backplaneType, nameof(backplaneType));
             NotNullOrWhiteSpace(configurationKey, nameof(configurationKey));
@@ -568,7 +568,7 @@ namespace CacheManager.Core
         /// <exception cref="System.ArgumentNullException">
         /// If <paramref name="configurationKey"/> or <paramref name="channelName"/> is null.
         /// </exception>
-        public ConfigurationBuilderCachePart WithBackplane(Type backplaneType, string configurationKey, string channelName, params object[] args)
+        public ConfigurationBuilderCachePart<K> WithBackplane(Type backplaneType, string configurationKey, string channelName, params object[] args)
         {
             NotNull(backplaneType, nameof(backplaneType));
             NotNullOrWhiteSpace(configurationKey, nameof(configurationKey));
@@ -589,8 +589,8 @@ namespace CacheManager.Core
         /// <para>This setting will be ignored if no backplane is configured.</para>
         /// </param>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCacheHandlePart WithDictionaryHandle(bool isBackplaneSource = false) =>
-            WithHandle(typeof(DictionaryCacheHandle<>), Guid.NewGuid().ToString("N"), isBackplaneSource);
+        public ConfigurationBuilderCacheHandlePart<K> WithDictionaryHandle(bool isBackplaneSource = false) =>
+            WithHandle(typeof(DictionaryCacheHandle<,>), Guid.NewGuid().ToString("N"), isBackplaneSource);
 
         /// <summary>
         /// Adds a cache dictionary cache handle to the cache manager.
@@ -602,8 +602,8 @@ namespace CacheManager.Core
         /// <para>This setting will be ignored if no backplane is configured.</para>
         /// </param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="handleName"/> is null.</exception>
-        public ConfigurationBuilderCacheHandlePart WithDictionaryHandle(string handleName, bool isBackplaneSource = false) =>
-            WithHandle(typeof(DictionaryCacheHandle<>), handleName, isBackplaneSource);
+        public ConfigurationBuilderCacheHandlePart<K> WithDictionaryHandle(string handleName, bool isBackplaneSource = false) =>
+            WithHandle(typeof(DictionaryCacheHandle<,>), handleName, isBackplaneSource);
 
         /// <summary>
         /// Adds a cache handle with the given <c>Type</c> and name.
@@ -624,12 +624,12 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// Thrown if handleName or cacheHandleBaseType are null.
         /// </exception>
-        public ConfigurationBuilderCacheHandlePart WithHandle(Type cacheHandleBaseType, string handleName, bool isBackplaneSource, params object[] configurationTypes)
+        public ConfigurationBuilderCacheHandlePart<K> WithHandle(Type cacheHandleBaseType, string handleName, bool isBackplaneSource, params object[] configurationTypes)
         {
             NotNull(cacheHandleBaseType, nameof(cacheHandleBaseType));
             NotNullOrWhiteSpace(handleName, nameof(handleName));
 
-            var handleCfg = new CacheHandleConfiguration(handleName)
+            var handleCfg = new CacheHandleConfiguration<K>(handleName)
             {
                 HandleType = cacheHandleBaseType,
                 ConfigurationTypes = configurationTypes
@@ -643,7 +643,7 @@ namespace CacheManager.Core
             }
 
             Configuration.CacheHandleConfigurations.Add(handleCfg);
-            var part = new ConfigurationBuilderCacheHandlePart(handleCfg, this);
+            var part = new ConfigurationBuilderCacheHandlePart<K>(handleCfg, this);
             return part;
         }
 
@@ -657,7 +657,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// Thrown if handleName or cacheHandleBaseType are null.
         /// </exception>
-        public ConfigurationBuilderCacheHandlePart WithHandle(Type cacheHandleBaseType, string handleName)
+        public ConfigurationBuilderCacheHandlePart<K> WithHandle(Type cacheHandleBaseType, string handleName)
             => WithHandle(cacheHandleBaseType, handleName, false);
 
         /// <summary>
@@ -669,7 +669,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// Thrown if handleName or cacheHandleBaseType are null.
         /// </exception>
-        public ConfigurationBuilderCacheHandlePart WithHandle(Type cacheHandleBaseType)
+        public ConfigurationBuilderCacheHandlePart<K> WithHandle(Type cacheHandleBaseType)
             => WithHandle(cacheHandleBaseType, Guid.NewGuid().ToString("N"), false);
 
         /// <summary>
@@ -684,7 +684,7 @@ namespace CacheManager.Core
         /// <exception cref="System.InvalidOperationException">
         /// Maximum number of retries must be greater than 0.
         /// </exception>
-        public ConfigurationBuilderCachePart WithMaxRetries(int retries)
+        public ConfigurationBuilderCachePart<K> WithMaxRetries(int retries)
         {
             Ensure(retries > 0, "Maximum number of retries must be greater than 0.");
 
@@ -704,7 +704,7 @@ namespace CacheManager.Core
         /// <exception cref="System.InvalidOperationException">
         /// Retry timeout must be greater than or equal to zero.
         /// </exception>
-        public ConfigurationBuilderCachePart WithRetryTimeout(int timeoutMillis)
+        public ConfigurationBuilderCachePart<K> WithRetryTimeout(int timeoutMillis)
         {
             Ensure(timeoutMillis >= 0, "Retry timeout must be greater than or equal to zero.");
 
@@ -719,7 +719,7 @@ namespace CacheManager.Core
         /// <param name="updateMode">The update mode.</param>
         /// <returns>The builder part.</returns>
         /// <seealso cref="CacheUpdateMode"/>
-        public ConfigurationBuilderCachePart WithUpdateMode(CacheUpdateMode updateMode)
+        public ConfigurationBuilderCachePart<K> WithUpdateMode(CacheUpdateMode updateMode)
         {
             Configuration.UpdateMode = updateMode;
             return this;
@@ -731,7 +731,7 @@ namespace CacheManager.Core
         /// <param name="serializerType">The type of the serializer.</param>
         /// <param name="args">Additional arguments the type might need to get initialized.</param>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCachePart WithSerializer(Type serializerType, params object[] args)
+        public ConfigurationBuilderCachePart<K> WithSerializer(Type serializerType, params object[] args)
         {
             NotNull(serializerType, nameof(serializerType));
 
@@ -746,9 +746,9 @@ namespace CacheManager.Core
         /// Configures a <see cref="BinaryCacheSerializer"/> to be used for serialization and deserialization.
         /// </summary>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCachePart WithBinarySerializer()
+        public ConfigurationBuilderCachePart<K> WithBinarySerializer()
         {
-            Configuration.SerializerType = typeof(BinaryCacheSerializer);
+            Configuration.SerializerType = typeof(BinaryCacheSerializer<K>);
             return this;
         }
 
@@ -758,9 +758,9 @@ namespace CacheManager.Core
         /// <param name="serializationFormatter">The <see cref="BinaryFormatter"/> for serialization.</param>
         /// <param name="deserializationFormatter">The <see cref="BinaryFormatter"/> for deserialization.</param>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCachePart WithBinarySerializer(BinaryFormatter serializationFormatter, BinaryFormatter deserializationFormatter)
+        public ConfigurationBuilderCachePart<K> WithBinarySerializer(BinaryFormatter serializationFormatter, BinaryFormatter deserializationFormatter)
         {
-            Configuration.SerializerType = typeof(BinaryCacheSerializer);
+            Configuration.SerializerType = typeof(BinaryCacheSerializer<K>);
             Configuration.SerializerTypeArguments = new object[] { serializationFormatter, deserializationFormatter };
             return this;
         }
@@ -773,7 +773,7 @@ namespace CacheManager.Core
         /// <param name="loggerFactoryType">The type of the logger factory.</param>
         /// <param name="args">Additional arguments the type might need to get initialized.</param>
         /// <returns>The builder part.</returns>
-        public ConfigurationBuilderCachePart WithLogging(Type loggerFactoryType, params object[] args)
+        public ConfigurationBuilderCachePart<K> WithLogging(Type loggerFactoryType, params object[] args)
         {
             NotNull(loggerFactoryType, nameof(loggerFactoryType));
 
@@ -786,9 +786,28 @@ namespace CacheManager.Core
         /// Hands back the new <see cref="CacheManagerConfiguration"/> instance.
         /// </summary>
         /// <returns>The <see cref="ICacheManagerConfiguration"/>.</returns>
-        public ICacheManagerConfiguration Build()
+        public ICacheManagerConfiguration<K> Build()
         {
             return Configuration;
+        }
+    }
+
+    public class ConfigurationBuilder : ConfigurationBuilder<string>
+    {
+        public ConfigurationBuilder()
+        {
+        }
+
+        public ConfigurationBuilder(string name) : base(name)
+        {
+        }
+
+        public ConfigurationBuilder(ICacheManagerConfiguration<string> forConfiguration) : base(forConfiguration)
+        {
+        }
+
+        public ConfigurationBuilder(string name, ICacheManagerConfiguration<string> forConfiguration) : base(name, forConfiguration)
+        {
         }
     }
 }

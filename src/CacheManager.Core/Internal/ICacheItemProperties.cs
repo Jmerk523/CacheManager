@@ -5,7 +5,7 @@ namespace CacheManager.Core.Internal
     /// <summary>
     /// Contract which exposes only the properties of the <see cref="CacheItem{T}"/> without T value.
     /// </summary>
-    public interface ICacheItemProperties
+    public interface ICacheItemProperties<K>
     {
         /// <summary>
         /// Gets the creation date of the cache item.
@@ -29,7 +29,7 @@ namespace CacheManager.Core.Internal
         /// Gets the cache key.
         /// </summary>
         /// <value>The cache key.</value>
-        string Key { get; }
+        K Key { get; }
 
         /// <summary>
         /// Gets or sets the last accessed date of the cache item.
@@ -54,5 +54,9 @@ namespace CacheManager.Core.Internal
         /// </summary>
         /// <value>The type of the cache value.</value>
         Type ValueType { get; }
+    }
+
+    public interface ICacheItemProperties : ICacheItemProperties<string>
+    {
     }
 }

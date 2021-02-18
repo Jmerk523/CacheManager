@@ -17,7 +17,7 @@ namespace CacheManager.SystemRuntimeCaching
     /// Although the MemoryCache doesn't support regions nor a RemoveAll/Clear method, we will
     /// implement it via cache dependencies.
     /// </remarks>
-    public class MemoryCacheHandle<TCacheValue> : BaseCacheHandle<TCacheValue>
+    public class MemoryCacheHandle<TCacheValue> : BaseCacheHandle<string, TCacheValue>
     {
         private const string DefaultName = "default";
 
@@ -34,7 +34,7 @@ namespace CacheManager.SystemRuntimeCaching
         /// <param name="managerConfiguration">The manager configuration.</param>
         /// <param name="configuration">The cache handle configuration.</param>
         /// <param name="loggerFactory">The logger factory.</param>
-        public MemoryCacheHandle(ICacheManagerConfiguration managerConfiguration, CacheHandleConfiguration configuration, ILoggerFactory loggerFactory)
+        public MemoryCacheHandle(ICacheManagerConfiguration<string> managerConfiguration, CacheHandleConfiguration<string> configuration, ILoggerFactory loggerFactory)
             : this(managerConfiguration, configuration, loggerFactory, null)
         {
         }
@@ -46,7 +46,7 @@ namespace CacheManager.SystemRuntimeCaching
         /// <param name="configuration">The cache handle configuration.</param>
         /// <param name="loggerFactory">The logger factory.</param>
         /// <param name="memoryCacheOptions">The vendor specific options.</param>
-        public MemoryCacheHandle(ICacheManagerConfiguration managerConfiguration, CacheHandleConfiguration configuration, ILoggerFactory loggerFactory, RuntimeMemoryCacheOptions memoryCacheOptions)
+        public MemoryCacheHandle(ICacheManagerConfiguration<string> managerConfiguration, CacheHandleConfiguration<string> configuration, ILoggerFactory loggerFactory, RuntimeMemoryCacheOptions memoryCacheOptions)
             : base(managerConfiguration, configuration)
         {
             NotNull(configuration, nameof(configuration));
@@ -125,7 +125,7 @@ namespace CacheManager.SystemRuntimeCaching
         /// <returns>
         /// <c>true</c> if the key was not already added to the cache, <c>false</c> otherwise.
         /// </returns>
-        protected override bool AddInternalPrepared(CacheItem<TCacheValue> item)
+        protected override bool AddInternalPrepared(CacheItem<string, TCacheValue> item)
         {
             var key = GetItemKey(item);
 
@@ -143,7 +143,7 @@ namespace CacheManager.SystemRuntimeCaching
         /// </summary>
         /// <param name="key">The key being used to identify the item within the cache.</param>
         /// <returns>The <c>CacheItem</c>.</returns>
-        protected override CacheItem<TCacheValue> GetCacheItemInternal(string key) => GetCacheItemInternal(key, null);
+        protected override CacheItem<string, TCacheValue> GetCacheItemInternal(string key) => GetCacheItemInternal(key, null);
 
         /// <summary>
         /// Gets a <c>CacheItem</c> for the specified key.
@@ -151,10 +151,10 @@ namespace CacheManager.SystemRuntimeCaching
         /// <param name="key">The key being used to identify the item within the cache.</param>
         /// <param name="region">The cache region.</param>
         /// <returns>The <c>CacheItem</c>.</returns>
-        protected override CacheItem<TCacheValue> GetCacheItemInternal(string key, string region)
+        protected override CacheItem<string, TCacheValue> GetCacheItemInternal(string key, string region)
         {
             var fullKey = GetItemKey(key, region);
-            var item = _cache.Get(fullKey) as CacheItem<TCacheValue>;
+            var item = _cache.Get(fullKey) as CacheItem<string, TCacheValue>;
 
             if (item == null)
             {
@@ -188,7 +188,7 @@ namespace CacheManager.SystemRuntimeCaching
         /// with the new value. If the item doesn't exist, the item will be added to the cache.
         /// </summary>
         /// <param name="item">The <c>CacheItem</c> to be added to the cache.</param>
-        protected override void PutInternalPrepared(CacheItem<TCacheValue> item)
+        protected override void PutInternalPrepared(CacheItem<string, TCacheValue> item)
         {
             var key = GetItemKey(item);
             var policy = GetPolicy(item);
@@ -237,7 +237,7 @@ namespace CacheManager.SystemRuntimeCaching
             // don't add a new key while we are disposing our instance
             if (!Disposing)
             {
-                var instanceItem = new CacheItem<string>(_instanceKey, _instanceKey);
+                var instanceItem = new CacheItem<string, string>(_instanceKey, _instanceKey);
                 var policy = new CacheItemPolicy()
                 {
                     Priority = CacheItemPriority.NotRemovable,
@@ -266,7 +266,7 @@ namespace CacheManager.SystemRuntimeCaching
             _cache.Add(key, region, policy);
         }
 
-        private CacheItemPolicy GetPolicy(CacheItem<TCacheValue> item)
+        private CacheItemPolicy GetPolicy(CacheItem<string, TCacheValue> item)
         {
             var monitorKeys = new[] { _instanceKey };
 
@@ -313,7 +313,7 @@ namespace CacheManager.SystemRuntimeCaching
             return policy;
         }
 
-        private string GetItemKey(CacheItem<TCacheValue> item) => GetItemKey(item?.Key, item?.Region);
+        private string GetItemKey(CacheItem<string, TCacheValue> item) => GetItemKey(item?.Key, item?.Region);
 
         private string GetItemKey(string key, string region = null)
         {
@@ -371,7 +371,7 @@ namespace CacheManager.SystemRuntimeCaching
                     Stats.OnRemove();
                 }
 
-                var item = arguments.CacheItem.Value as CacheItem<TCacheValue>;
+                var item = arguments.CacheItem.Value as CacheItem<string, TCacheValue>;
                 object originalValue = null;
                 if (item != null)
                 {

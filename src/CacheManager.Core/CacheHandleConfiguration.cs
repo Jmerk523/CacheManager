@@ -6,7 +6,7 @@ namespace CacheManager.Core
     /// <summary>
     /// Defines all settings the cache handle should respect.
     /// </summary>
-    public sealed class CacheHandleConfiguration
+    public sealed class CacheHandleConfiguration<K>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CacheHandleConfiguration"/> class.

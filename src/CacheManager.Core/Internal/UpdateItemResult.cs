@@ -40,8 +40,8 @@ namespace CacheManager.Core.Internal
         /// </summary>
         /// <typeparam name="TCacheValue">The type of the cache value.</typeparam>
         /// <returns>The item result.</returns>
-        public static UpdateItemResult<TCacheValue> ForItemDidNotExist<TCacheValue>() =>
-            new UpdateItemResult<TCacheValue>(null, UpdateItemResultState.ItemDidNotExist, false, 1);
+        public static UpdateItemResult<K, TCacheValue> ForItemDidNotExist<K, TCacheValue>() =>
+            new UpdateItemResult<K, TCacheValue>(null, UpdateItemResultState.ItemDidNotExist, false, 1);
 
         /// <summary>
         /// Creates a new instance of the <see cref="UpdateItemResult{TCacheValue}"/> indicating that the
@@ -49,8 +49,8 @@ namespace CacheManager.Core.Internal
         /// </summary>
         /// <typeparam name="TCacheValue">The type of the cache value.</typeparam>
         /// <returns>The item result.</returns>
-        public static UpdateItemResult<TCacheValue> ForFactoryReturnedNull<TCacheValue>() =>
-            new UpdateItemResult<TCacheValue>(null, UpdateItemResultState.FactoryReturnedNull, false, 1);
+        public static UpdateItemResult<K, TCacheValue> ForFactoryReturnedNull<K, TCacheValue>() =>
+            new UpdateItemResult<K, TCacheValue>(null, UpdateItemResultState.FactoryReturnedNull, false, 1);
 
         /// <summary>
         /// Creates a new instance of the <see cref="UpdateItemResult{TCacheValue}"/> class with
@@ -61,8 +61,8 @@ namespace CacheManager.Core.Internal
         /// <param name="conflictOccurred">Set to <c>true</c> if a conflict occurred.</param>
         /// <param name="triesNeeded">The tries needed.</param>
         /// <returns>The item result.</returns>
-        public static UpdateItemResult<TCacheValue> ForSuccess<TCacheValue>(CacheItem<TCacheValue> value, bool conflictOccurred = false, int triesNeeded = 1) =>
-            new UpdateItemResult<TCacheValue>(value, UpdateItemResultState.Success, conflictOccurred, triesNeeded);
+        public static UpdateItemResult<K, TCacheValue> ForSuccess<K, TCacheValue>(CacheItem<K, TCacheValue> value, bool conflictOccurred = false, int triesNeeded = 1) =>
+            new UpdateItemResult<K, TCacheValue>(value, UpdateItemResultState.Success, conflictOccurred, triesNeeded);
 
         /// <summary>
         /// Creates a new instance of the <see cref="UpdateItemResult{TCacheValue}"/> class with
@@ -71,8 +71,8 @@ namespace CacheManager.Core.Internal
         /// <typeparam name="TCacheValue">The type of the cache value.</typeparam>
         /// <param name="triesNeeded">The tries needed.</param>
         /// <returns>The item result.</returns>
-        public static UpdateItemResult<TCacheValue> ForTooManyRetries<TCacheValue>(int triesNeeded) =>
-            new UpdateItemResult<TCacheValue>(null, UpdateItemResultState.TooManyRetries, true, triesNeeded);
+        public static UpdateItemResult<K, TCacheValue> ForTooManyRetries<K, TCacheValue>(int triesNeeded) =>
+            new UpdateItemResult<K, TCacheValue>(null, UpdateItemResultState.TooManyRetries, true, triesNeeded);
     }
 
     /// <summary>
@@ -80,9 +80,9 @@ namespace CacheManager.Core.Internal
     /// update operation.
     /// </summary>
     /// <typeparam name="TCacheValue">The type of the cache value.</typeparam>
-    public class UpdateItemResult<TCacheValue>
+    public class UpdateItemResult<K, TCacheValue>
     {
-        internal UpdateItemResult(CacheItem<TCacheValue> value, UpdateItemResultState state, bool conflictOccurred, int triesNeeded)
+        internal UpdateItemResult(CacheItem<K, TCacheValue> value, UpdateItemResultState state, bool conflictOccurred, int triesNeeded)
         {
             if (triesNeeded == 0)
             {
@@ -111,12 +111,19 @@ namespace CacheManager.Core.Internal
         /// Gets the updated value.
         /// </summary>
         /// <value>The updated value.</value>
-        public CacheItem<TCacheValue> Value { get; }
+        public CacheItem<K, TCacheValue> Value { get; }
 
         /// <summary>
         /// Gets a value indicating whether a version conflict occurred during an update operation.
         /// </summary>
         /// <value><c>true</c> if a version conflict occurred; otherwise, <c>false</c>.</value>
         public bool VersionConflictOccurred { get; }
+    }
+
+    public class UpdateItemResult<T> : UpdateItemResult<string, T>
+    {
+        internal UpdateItemResult(CacheItem<T> value, UpdateItemResultState state, bool conflictOccurred, int triesNeeded) : base(value, state, conflictOccurred, triesNeeded)
+        {
+        }
     }
 }

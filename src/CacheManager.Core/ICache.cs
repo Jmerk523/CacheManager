@@ -20,7 +20,7 @@ namespace CacheManager.Core
     /// </para>
     /// </summary>
     /// <typeparam name="TCacheValue">The type of the cache value.</typeparam>
-    public interface ICache<TCacheValue> : IDisposable
+    public interface ICache<K, TCacheValue> : IDisposable
     {
         /// <summary>
         /// Gets or sets a value for the specified key. The indexer is identical to the
@@ -29,7 +29,7 @@ namespace CacheManager.Core
         /// <param name="key">The key being used to identify the item within the cache.</param>
         /// <returns>The value being stored in the cache for the given <paramref name="key"/>.</returns>
         /// <exception cref="ArgumentNullException">If the <paramref name="key"/> is null.</exception>
-        TCacheValue this[string key] { get; set; }
+        TCacheValue this[K key] { get; set; }
 
         /// <summary>
         /// Gets or sets a value for the specified key and region. The indexer is identical to the
@@ -48,7 +48,7 @@ namespace CacheManager.Core
         /// If the <paramref name="key"/> or <paramref name="region"/> is null.
         /// </exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1023:IndexersShouldNotBeMultidimensional", Justification = "nope")]
-        TCacheValue this[string key, string region] { get; set; }
+        TCacheValue this[K key, string region] { get; set; }
 
         /// <summary>
         /// Adds a value for the specified key to the cache.
@@ -65,7 +65,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="key"/> or <paramref name="value"/> is null.
         /// </exception>
-        bool Add(string key, TCacheValue value);
+        bool Add(K key, TCacheValue value);
 
         /// <summary>
         /// Adds a value for the specified key and region to the cache.
@@ -86,7 +86,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="key"/>, <paramref name="value"/> or <paramref name="region"/> is null.
         /// </exception>
-        bool Add(string key, TCacheValue value, string region);
+        bool Add(K key, TCacheValue value, string region);
 
         /// <summary>
         /// Adds the specified <c>CacheItem</c> to the cache.
@@ -106,7 +106,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="item"/> or the item's key or value is null.
         /// </exception>
-        bool Add(CacheItem<TCacheValue> item);
+        bool Add(CacheItem<K, TCacheValue> item);
 
         /// <summary>
         /// Clears this cache, removing all items in the base cache and all regions.
@@ -126,7 +126,7 @@ namespace CacheManager.Core
         /// </summary>
         /// <param name="key">The cache key to check.</param>
         /// <returns><c>True</c> if the <paramref name="key"/> exists, <c>False</c> otherwise.</returns>
-        bool Exists(string key);
+        bool Exists(K key);
 
         /// <summary>
         /// Returns a value indicating if the <paramref name="key"/> in <paramref name="region"/> exists in at least one cache layer
@@ -135,7 +135,7 @@ namespace CacheManager.Core
         /// <param name="key">The cache key to check.</param>
         /// <param name="region">The cache region.</param>
         /// <returns><c>True</c> if the <paramref name="key"/> exists, <c>False</c> otherwise.</returns>
-        bool Exists(string key, string region);
+        bool Exists(K key, string region);
 
         /// <summary>
         /// Gets a value for the specified key.
@@ -144,7 +144,7 @@ namespace CacheManager.Core
         /// <returns>The value being stored in the cache for the given <paramref name="key"/>.</returns>
         /// <exception cref="ArgumentNullException">If the <paramref name="key"/> is null.</exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "Maybe at some point.")]
-        TCacheValue Get(string key);
+        TCacheValue Get(K key);
 
         /// <summary>
         /// Gets a value for the specified key and region.
@@ -158,7 +158,7 @@ namespace CacheManager.Core
         /// If the <paramref name="key"/> or <paramref name="region"/> is null.
         /// </exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "Maybe at some point.")]
-        TCacheValue Get(string key, string region);
+        TCacheValue Get(K key, string region);
 
         /// <summary>
         /// Gets a value for the specified key and will cast it to the specified type.
@@ -171,7 +171,7 @@ namespace CacheManager.Core
         /// If no explicit cast is defined from <c>TCacheValue</c> to <c>TOut</c>.
         /// </exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "Maybe at some point.")]
-        TOut Get<TOut>(string key);
+        TOut Get<TOut>(K key);
 
         /// <summary>
         /// Gets a value for the specified key and region and will cast it to the specified type.
@@ -189,7 +189,7 @@ namespace CacheManager.Core
         /// If no explicit cast is defined from <c>TCacheValue</c> to <c>TOut</c>.
         /// </exception>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Naming", "CA1716:IdentifiersShouldNotMatchKeywords", MessageId = "Get", Justification = "Maybe at some point.")]
-        TOut Get<TOut>(string key, string region);
+        TOut Get<TOut>(K key, string region);
 
         /// <summary>
         /// Gets the <c>CacheItem</c> for the specified key.
@@ -197,7 +197,7 @@ namespace CacheManager.Core
         /// <param name="key">The key being used to identify the item within the cache.</param>
         /// <returns>The <c>CacheItem</c>.</returns>
         /// <exception cref="ArgumentNullException">If the <paramref name="key"/> is null.</exception>
-        CacheItem<TCacheValue> GetCacheItem(string key);
+        CacheItem<K, TCacheValue> GetCacheItem(K key);
 
         /// <summary>
         /// Gets the <c>CacheItem</c> for the specified key and region.
@@ -208,7 +208,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="key"/> or <paramref name="region"/> is null.
         /// </exception>
-        CacheItem<TCacheValue> GetCacheItem(string key, string region);
+        CacheItem<K, TCacheValue> GetCacheItem(K key, string region);
 
         /// <summary>
         /// Puts a value for the specified key into the cache.
@@ -222,7 +222,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="key"/> or <paramref name="value"/> is null.
         /// </exception>
-        void Put(string key, TCacheValue value);
+        void Put(K key, TCacheValue value);
 
         /// <summary>
         /// Puts a value for the specified key and region into the cache.
@@ -240,7 +240,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="key"/>, <paramref name="value"/> or <paramref name="region"/> is null.
         /// </exception>
-        void Put(string key, TCacheValue value, string region);
+        void Put(K key, TCacheValue value, string region);
 
         /// <summary>
         /// Puts the specified <c>CacheItem</c> into the cache.
@@ -257,7 +257,7 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="item"/> or the item's key or value is null.
         /// </exception>
-        void Put(CacheItem<TCacheValue> item);
+        void Put(CacheItem<K, TCacheValue> item);
 
         /// <summary>
         /// Removes a value from the cache for the specified key.
@@ -267,7 +267,7 @@ namespace CacheManager.Core
         /// <c>true</c> if the key was found and removed from the cache, <c>false</c> otherwise.
         /// </returns>
         /// <exception cref="ArgumentNullException">If the <paramref name="key"/> is null.</exception>
-        bool Remove(string key);
+        bool Remove(K key);
 
         /// <summary>
         /// Removes a value from the cache for the specified key and region.
@@ -280,6 +280,10 @@ namespace CacheManager.Core
         /// <exception cref="ArgumentNullException">
         /// If the <paramref name="key"/> or <paramref name="region"/> is null.
         /// </exception>
-        bool Remove(string key, string region);
+        bool Remove(K key, string region);
     }
+
+    //public interface ICache<T> : ICache<string, T>
+    //{
+    //}
 }

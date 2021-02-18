@@ -182,7 +182,7 @@ namespace CacheManager.Core.Internal
         /// </summary>
         /// <param name="item">The item.</param>
         /// <exception cref="System.ArgumentNullException">If item is null.</exception>
-        public void OnAdd(CacheItem<TCacheValue> item)
+        public void OnAdd<K>(CacheItem<K, TCacheValue> item)
         {
             if (!_isStatsEnabled)
             {
@@ -302,7 +302,7 @@ namespace CacheManager.Core.Internal
         /// <param name="item">The item.</param>
         /// <param name="itemAdded">If <c>true</c> the item didn't exist and has been added.</param>
         /// <exception cref="System.ArgumentNullException">If item is null.</exception>
-        public void OnPut(CacheItem<TCacheValue> item, bool itemAdded)
+        public void OnPut<K>(CacheItem<K, TCacheValue> item, bool itemAdded)
         {
             if (!_isStatsEnabled)
             {
@@ -347,14 +347,14 @@ namespace CacheManager.Core.Internal
         /// <param name="region">The region.</param>
         /// <param name="result">The result.</param>
         /// <exception cref="System.ArgumentNullException">If key or result are null.</exception>
-        public void OnUpdate(string key, string region, UpdateItemResult<TCacheValue> result)
+        public void OnUpdate<K>(K key, string region, UpdateItemResult<K, TCacheValue> result)
         {
             if (!_isStatsEnabled)
             {
                 return;
             }
 
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
             NotNull(result, nameof(result));
 
             foreach (var counter in GetWorkingCounters(region))
@@ -378,7 +378,7 @@ namespace CacheManager.Core.Internal
 
         private CacheStatsCounter GetCounter(string key)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
 
             CacheStatsCounter counter = null;
             if (!_counters.TryGetValue(key, out counter))

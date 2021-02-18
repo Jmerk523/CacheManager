@@ -6,30 +6,30 @@ using static CacheManager.Core.Utility.Guard;
 
 namespace CacheManager.Core
 {
-    public partial class BaseCacheManager<TCacheValue>
+    public partial class BaseCacheManager<K, TCacheValue>
     {
         /// <inheritdoc />
-        public TCacheValue AddOrUpdate(string key, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue) =>
+        public TCacheValue AddOrUpdate(K key, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue) =>
             AddOrUpdate(key, addValue, updateValue, Configuration.MaxRetries);
 
         /// <inheritdoc />
-        public TCacheValue AddOrUpdate(string key, string region, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue) =>
+        public TCacheValue AddOrUpdate(K key, string region, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue) =>
             AddOrUpdate(key, region, addValue, updateValue, Configuration.MaxRetries);
 
         /// <inheritdoc />
-        public TCacheValue AddOrUpdate(string key, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue, int maxRetries) =>
-            AddOrUpdate(new CacheItem<TCacheValue>(key, addValue), updateValue, maxRetries);
+        public TCacheValue AddOrUpdate(K key, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue, int maxRetries) =>
+            AddOrUpdate(new CacheItem<K, TCacheValue>(key, addValue), updateValue, maxRetries);
 
         /// <inheritdoc />
-        public TCacheValue AddOrUpdate(string key, string region, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue, int maxRetries) =>
-            AddOrUpdate(new CacheItem<TCacheValue>(key, region, addValue), updateValue, maxRetries);
+        public TCacheValue AddOrUpdate(K key, string region, TCacheValue addValue, Func<TCacheValue, TCacheValue> updateValue, int maxRetries) =>
+            AddOrUpdate(new CacheItem<K, TCacheValue>(key, region, addValue), updateValue, maxRetries);
 
         /// <inheritdoc />
-        public TCacheValue AddOrUpdate(CacheItem<TCacheValue> addItem, Func<TCacheValue, TCacheValue> updateValue) =>
+        public TCacheValue AddOrUpdate(CacheItem<K, TCacheValue> addItem, Func<TCacheValue, TCacheValue> updateValue) =>
             AddOrUpdate(addItem, updateValue, Configuration.MaxRetries);
 
         /// <inheritdoc />
-        public TCacheValue AddOrUpdate(CacheItem<TCacheValue> addItem, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
+        public TCacheValue AddOrUpdate(CacheItem<K, TCacheValue> addItem, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
         {
             NotNull(addItem, nameof(addItem));
             NotNull(updateValue, nameof(updateValue));
@@ -38,7 +38,7 @@ namespace CacheManager.Core
             return AddOrUpdateInternal(addItem, updateValue, maxRetries);
         }
 
-        private TCacheValue AddOrUpdateInternal(CacheItem<TCacheValue> item, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
+        private TCacheValue AddOrUpdateInternal(CacheItem<K, TCacheValue> item, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
         {
             CheckDisposed();
             if (_logTrace)
@@ -101,17 +101,17 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        public bool TryUpdate(string key, Func<TCacheValue, TCacheValue> updateValue, out TCacheValue value) =>
+        public bool TryUpdate(K key, Func<TCacheValue, TCacheValue> updateValue, out TCacheValue value) =>
             TryUpdate(key, updateValue, Configuration.MaxRetries, out value);
 
         /// <inheritdoc />
-        public bool TryUpdate(string key, string region, Func<TCacheValue, TCacheValue> updateValue, out TCacheValue value) =>
+        public bool TryUpdate(K key, string region, Func<TCacheValue, TCacheValue> updateValue, out TCacheValue value) =>
             TryUpdate(key, region, updateValue, Configuration.MaxRetries, out value);
 
         /// <inheritdoc />
-        public bool TryUpdate(string key, Func<TCacheValue, TCacheValue> updateValue, int maxRetries, out TCacheValue value)
+        public bool TryUpdate(K key, Func<TCacheValue, TCacheValue> updateValue, int maxRetries, out TCacheValue value)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
             NotNull(updateValue, nameof(updateValue));
             Ensure(maxRetries >= 0, "Maximum number of retries must be greater than or equal to zero.");
 
@@ -119,9 +119,9 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        public bool TryUpdate(string key, string region, Func<TCacheValue, TCacheValue> updateValue, int maxRetries, out TCacheValue value)
+        public bool TryUpdate(K key, string region, Func<TCacheValue, TCacheValue> updateValue, int maxRetries, out TCacheValue value)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
             NotNullOrWhiteSpace(region, nameof(region));
             NotNull(updateValue, nameof(updateValue));
             Ensure(maxRetries >= 0, "Maximum number of retries must be greater than or equal to zero.");
@@ -130,17 +130,17 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        public TCacheValue Update(string key, Func<TCacheValue, TCacheValue> updateValue) =>
+        public TCacheValue Update(K key, Func<TCacheValue, TCacheValue> updateValue) =>
             Update(key, updateValue, Configuration.MaxRetries);
 
         /// <inheritdoc />
-        public TCacheValue Update(string key, string region, Func<TCacheValue, TCacheValue> updateValue) =>
+        public TCacheValue Update(K key, string region, Func<TCacheValue, TCacheValue> updateValue) =>
             Update(key, region, updateValue, Configuration.MaxRetries);
 
         /// <inheritdoc />
-        public TCacheValue Update(string key, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
+        public TCacheValue Update(K key, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
             NotNull(updateValue, nameof(updateValue));
             Ensure(maxRetries >= 0, "Maximum number of retries must be greater than or equal to zero.");
 
@@ -151,9 +151,9 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        public TCacheValue Update(string key, string region, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
+        public TCacheValue Update(K key, string region, Func<TCacheValue, TCacheValue> updateValue, int maxRetries)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
             NotNullOrWhiteSpace(region, nameof(region));
             NotNull(updateValue, nameof(updateValue));
             Ensure(maxRetries >= 0, "Maximum number of retries must be greater than or equal to zero.");
@@ -165,8 +165,8 @@ namespace CacheManager.Core
         }
 
         private bool UpdateInternal(
-            BaseCacheHandle<TCacheValue>[] handles,
-            string key,
+            BaseCacheHandle<K, TCacheValue>[] handles,
+            K key,
             Func<TCacheValue, TCacheValue> updateValue,
             int maxRetries,
             bool throwOnFailure,
@@ -174,8 +174,8 @@ namespace CacheManager.Core
             UpdateInternal(handles, key, null, updateValue, maxRetries, throwOnFailure, out value);
 
         private bool UpdateInternal(
-            BaseCacheHandle<TCacheValue>[] handles,
-            string key,
+            BaseCacheHandle<K, TCacheValue>[] handles,
+            K key,
             string region,
             Func<TCacheValue, TCacheValue> updateValue,
             int maxRetries,

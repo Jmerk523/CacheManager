@@ -21,7 +21,7 @@ namespace CacheManager.Core
         /// The builder part.
         /// </returns>
         /// <returns>The builder part.</returns>
-        public static ConfigurationBuilderCacheHandlePart WithSystemRuntimeCacheHandle(this ConfigurationBuilderCachePart part, bool isBackplaneSource = false)
+        public static ConfigurationBuilderCacheHandlePart<K> WithSystemRuntimeCacheHandle<K>(this ConfigurationBuilderCachePart<K> part, bool isBackplaneSource = false)
             => part?.WithHandle(typeof(MemoryCacheHandle<>), DefaultName, isBackplaneSource);
 
         /// <summary>
@@ -37,7 +37,7 @@ namespace CacheManager.Core
         /// </returns>
         /// <exception cref="System.ArgumentNullException">If part is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="instanceName"/> is null.</exception>
-        public static ConfigurationBuilderCacheHandlePart WithSystemRuntimeCacheHandle(this ConfigurationBuilderCachePart part, string instanceName, bool isBackplaneSource = false)
+        public static ConfigurationBuilderCacheHandlePart<K> WithSystemRuntimeCacheHandle<K>(this ConfigurationBuilderCachePart<K> part, string instanceName, bool isBackplaneSource = false)
             => part?.WithHandle(typeof(MemoryCacheHandle<>), instanceName, isBackplaneSource);
 
         /// <summary>
@@ -55,8 +55,8 @@ namespace CacheManager.Core
         /// </returns>
         /// <exception cref="System.ArgumentNullException">If part is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="instanceName"/> is null.</exception>
-        public static ConfigurationBuilderCacheHandlePart WithSystemRuntimeCacheHandle(
-            this ConfigurationBuilderCachePart part, string instanceName, RuntimeMemoryCacheOptions options)
+        public static ConfigurationBuilderCacheHandlePart<K> WithSystemRuntimeCacheHandle<K>(
+            this ConfigurationBuilderCachePart<K> part, string instanceName, RuntimeMemoryCacheOptions options)
             => WithSystemRuntimeCacheHandle(part, instanceName, false, options);
 
         /// <summary>
@@ -76,8 +76,8 @@ namespace CacheManager.Core
         /// </returns>
         /// <exception cref="System.ArgumentNullException">If part is null.</exception>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="instanceName"/> is null.</exception>
-        public static ConfigurationBuilderCacheHandlePart WithSystemRuntimeCacheHandle(
-            this ConfigurationBuilderCachePart part, string instanceName, bool isBackplaneSource, RuntimeMemoryCacheOptions options)
+        public static ConfigurationBuilderCacheHandlePart<K> WithSystemRuntimeCacheHandle<K>(
+            this ConfigurationBuilderCachePart<K> part, string instanceName, bool isBackplaneSource, RuntimeMemoryCacheOptions options)
             => part?.WithHandle(typeof(MemoryCacheHandle<>), instanceName, isBackplaneSource, options);
     }
 }

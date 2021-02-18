@@ -16,11 +16,11 @@ namespace CacheManager.Core
     /// added. It will keep them in sync according to rules and depending on the configuration.
     /// </summary>
     /// <typeparam name="TCacheValue">The type of the cache value.</typeparam>
-    public partial class BaseCacheManager<TCacheValue> : BaseCache<TCacheValue>, ICacheManager<TCacheValue>, IDisposable
+    public partial class BaseCacheManager<K, TCacheValue> : BaseCache<K, TCacheValue>, ICacheManager<K, TCacheValue>, IDisposable
     {
         private readonly bool _logTrace = false;
-        private readonly BaseCacheHandle<TCacheValue>[] _cacheHandles;
-        private readonly CacheBackplane _cacheBackplane;
+        private readonly BaseCacheHandle<K, TCacheValue>[] _cacheHandles;
+        private readonly CacheBackplane<K> _cacheBackplane;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="BaseCacheManager{TCacheValue}"/> class
@@ -37,7 +37,7 @@ namespace CacheManager.Core
         /// <see cref="CacheFactory"/>
         /// <see cref="ConfigurationBuilder"/>
         /// <see cref="BaseCacheHandle{TCacheValue}"/>
-        public BaseCacheManager(ICacheManagerConfiguration configuration)
+        public BaseCacheManager(ICacheManagerConfiguration<K> configuration)
             : this(configuration?.Name ?? Guid.NewGuid().ToString(), configuration)
         {
         }
@@ -58,7 +58,7 @@ namespace CacheManager.Core
         /// <see cref="BaseCacheHandle{TCacheValue}"/>
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2200:RethrowToPreserveStackDetails", Justification = "fine for now")]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Reliability", "CA2000:Dispose objects before losing scope", Justification = "nope")]
-        private BaseCacheManager(string name, ICacheManagerConfiguration configuration)
+        private BaseCacheManager(string name, ICacheManagerConfiguration<K> configuration)
         {
             NotNullOrWhiteSpace(name, nameof(name));
             NotNull(configuration, nameof(configuration));
@@ -132,7 +132,7 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        public event EventHandler<CacheActionEventArgs> OnAdd;
+        public event EventHandler<CacheActionEventArgs<K>> OnAdd;
 
         /// <inheritdoc />
         public event EventHandler<CacheClearEventArgs> OnClear;
@@ -141,34 +141,34 @@ namespace CacheManager.Core
         public event EventHandler<CacheClearRegionEventArgs> OnClearRegion;
 
         /// <inheritdoc />
-        public event EventHandler<CacheActionEventArgs> OnGet;
+        public event EventHandler<CacheActionEventArgs<K>> OnGet;
 
         /// <inheritdoc />
-        public event EventHandler<CacheActionEventArgs> OnPut;
+        public event EventHandler<CacheActionEventArgs<K>> OnPut;
 
         /// <inheritdoc />
-        public event EventHandler<CacheActionEventArgs> OnRemove;
+        public event EventHandler<CacheActionEventArgs<K>> OnRemove;
 
         /// <inheritdoc />
-        public event EventHandler<CacheItemRemovedEventArgs> OnRemoveByHandle;
+        public event EventHandler<CacheItemRemovedEventArgs<K>> OnRemoveByHandle;
 
         /// <inheritdoc />
-        public event EventHandler<CacheActionEventArgs> OnUpdate;
+        public event EventHandler<CacheActionEventArgs<K>> OnUpdate;
 
         /// <inheritdoc />
-        public IReadOnlyCacheManagerConfiguration Configuration { get; }
+        public IReadOnlyCacheManagerConfiguration<K> Configuration { get; }
 
         /// <inheritdoc />
-        public IEnumerable<BaseCacheHandle<TCacheValue>> CacheHandles
-            => new ReadOnlyCollection<BaseCacheHandle<TCacheValue>>(
-                new List<BaseCacheHandle<TCacheValue>>(
+        public IEnumerable<BaseCacheHandle<K, TCacheValue>> CacheHandles
+            => new ReadOnlyCollection<BaseCacheHandle<K, TCacheValue>>(
+                new List<BaseCacheHandle<K, TCacheValue>>(
                     _cacheHandles));
 
         /// <summary>
         /// Gets the configured cache backplane.
         /// </summary>
         /// <value>The backplane.</value>
-        public CacheBackplane Backplane => _cacheBackplane;
+        public CacheBackplane<K> Backplane => _cacheBackplane;
 
         /// <summary>
         /// Gets the cache name.
@@ -248,7 +248,7 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        public override bool Exists(string key)
+        public override bool Exists(K key)
         {
             foreach (var handle in _cacheHandles)
             {
@@ -267,7 +267,7 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        public override bool Exists(string key, string region)
+        public override bool Exists(K key, string region)
         {
             foreach (var handle in _cacheHandles)
             {
@@ -295,7 +295,7 @@ namespace CacheManager.Core
             string.Format(CultureInfo.InvariantCulture, "Name: {0}, Handles: [{1}]", Name, string.Join(",", _cacheHandles.Select(p => p.GetType().Name)));
 
         /// <inheritdoc />
-        protected internal override bool AddInternal(CacheItem<TCacheValue> item)
+        protected internal override bool AddInternal(CacheItem<K, TCacheValue> item)
         {
             NotNull(item, nameof(item));
 
@@ -341,7 +341,7 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        protected internal override void PutInternal(CacheItem<TCacheValue> item)
+        protected internal override void PutInternal(CacheItem<K, TCacheValue> item)
         {
             NotNull(item, nameof(item));
 
@@ -418,15 +418,15 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        protected override CacheItem<TCacheValue> GetCacheItemInternal(string key) =>
+        protected override CacheItem<K, TCacheValue> GetCacheItemInternal(K key) =>
             GetCacheItemInternal(key, null);
 
         /// <inheritdoc />
-        protected override CacheItem<TCacheValue> GetCacheItemInternal(string key, string region)
+        protected override CacheItem<K, TCacheValue> GetCacheItemInternal(K key, string region)
         {
             CheckDisposed();
 
-            CacheItem<TCacheValue> cacheItem = null;
+            CacheItem<K, TCacheValue> cacheItem = null;
 
             if (_logTrace)
             {
@@ -478,11 +478,11 @@ namespace CacheManager.Core
         }
 
         /// <inheritdoc />
-        protected override bool RemoveInternal(string key) =>
+        protected override bool RemoveInternal(K key) =>
             RemoveInternal(key, null);
 
         /// <inheritdoc />
-        protected override bool RemoveInternal(string key, string region)
+        protected override bool RemoveInternal(K key, string region)
         {
             CheckDisposed();
 
@@ -548,7 +548,7 @@ namespace CacheManager.Core
             return result;
         }
 
-        private static bool AddItemToHandle(CacheItem<TCacheValue> item, BaseCacheHandle<TCacheValue> handle)
+        private static bool AddItemToHandle(CacheItem<K, TCacheValue> item, BaseCacheHandle<K, TCacheValue> handle)
         {
             if (handle.Add(item))
             {
@@ -559,7 +559,7 @@ namespace CacheManager.Core
             return false;
         }
 
-        private static void ClearHandles(BaseCacheHandle<TCacheValue>[] handles)
+        private static void ClearHandles(IEnumerable<BaseCacheHandle<K, TCacheValue>> handles)
         {
             foreach (var handle in handles)
             {
@@ -570,7 +570,7 @@ namespace CacheManager.Core
             ////this.TriggerOnClear();
         }
 
-        private static void ClearRegionHandles(string region, BaseCacheHandle<TCacheValue>[] handles)
+        private static void ClearRegionHandles(string region, IEnumerable<BaseCacheHandle<K, TCacheValue>> handles)
         {
             foreach (var handle in handles)
             {
@@ -581,7 +581,7 @@ namespace CacheManager.Core
             ////this.TriggerOnClearRegion(region);
         }
 
-        private void EvictFromHandles(string key, string region, BaseCacheHandle<TCacheValue>[] handles)
+        private void EvictFromHandles(K key, string region, IEnumerable<BaseCacheHandle<K, TCacheValue>> handles)
         {
             foreach (var handle in handles)
             {
@@ -589,7 +589,7 @@ namespace CacheManager.Core
             }
         }
 
-        private void EvictFromHandle(string key, string region, BaseCacheHandle<TCacheValue> handle)
+        private void EvictFromHandle(K key, string region, BaseCacheHandle<K, TCacheValue> handle)
         {
             if (Logger.IsEnabled(LogLevel.Debug))
             {
@@ -616,7 +616,7 @@ namespace CacheManager.Core
             }
         }
 
-        private void AddToHandles(CacheItem<TCacheValue> item, int foundIndex)
+        private void AddToHandles(CacheItem<K, TCacheValue> item, int foundIndex)
         {
             if (_logTrace)
             {
@@ -645,7 +645,7 @@ namespace CacheManager.Core
             }
         }
 
-        private void AddToHandlesBelow(CacheItem<TCacheValue> item, int foundIndex)
+        private void AddToHandlesBelow(CacheItem<K, TCacheValue> item, int foundIndex)
         {
             if (item == null)
             {
@@ -669,7 +669,7 @@ namespace CacheManager.Core
             }
         }
 
-        private void EvictFromOtherHandles(string key, string region, int excludeIndex)
+        private void EvictFromOtherHandles(K key, string region, int excludeIndex)
         {
             if (excludeIndex < 0 || excludeIndex >= _cacheHandles.Length)
             {
@@ -690,7 +690,7 @@ namespace CacheManager.Core
             }
         }
 
-        private void EvictFromHandlesAbove(string key, string region, int excludeIndex)
+        private void EvictFromHandlesAbove(K key, string region, int excludeIndex)
         {
             if (_logTrace)
             {
@@ -711,7 +711,7 @@ namespace CacheManager.Core
             }
         }
 
-        private void RegisterCacheBackplane(CacheBackplane backplane)
+        private void RegisterCacheBackplane(CacheBackplane<K> backplane)
         {
             NotNull(backplane, nameof(backplane));
 
@@ -722,9 +722,9 @@ namespace CacheManager.Core
                 // in case the backplane source is non-distributed (in-memory), only remotly triggered remove and clear should also
                 // trigger a sync locally. For distribtued caches, we expect that the distributed cache is already the source and in sync
                 // as that's the layer which triggered the event. In this case, only other in-memory handles above the distribtued, would be synced.
-                var handles = new Func<bool, BaseCacheHandle<TCacheValue>[]>((includSource) =>
+                var handles = new Func<bool, BaseCacheHandle<K, TCacheValue>[]>((includSource) =>
                 {
-                    var handleList = new List<BaseCacheHandle<TCacheValue>>();
+                    var handleList = new List<BaseCacheHandle<K, TCacheValue>>();
                     foreach (var handle in _cacheHandles)
                     {
                         if (!handle.Configuration.IsBackplaneSource ||
@@ -795,9 +795,9 @@ namespace CacheManager.Core
             }
         }
 
-        private void TriggerOnAdd(string key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
+        private void TriggerOnAdd(K key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
         {
-            OnAdd?.Invoke(this, new CacheActionEventArgs(key, region, origin));
+            OnAdd?.Invoke(this, new CacheActionEventArgs<K>(key, region, origin));
         }
 
         private void TriggerOnClear(CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
@@ -810,31 +810,31 @@ namespace CacheManager.Core
             OnClearRegion?.Invoke(this, new CacheClearRegionEventArgs(region, origin));
         }
 
-        private void TriggerOnGet(string key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
+        private void TriggerOnGet(K key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
         {
-            OnGet?.Invoke(this, new CacheActionEventArgs(key, region, origin));
+            OnGet?.Invoke(this, new CacheActionEventArgs<K>(key, region, origin));
         }
 
-        private void TriggerOnPut(string key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
+        private void TriggerOnPut(K key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
         {
-            OnPut?.Invoke(this, new CacheActionEventArgs(key, region, origin));
+            OnPut?.Invoke(this, new CacheActionEventArgs<K>(key, region, origin));
         }
 
-        private void TriggerOnRemove(string key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
+        private void TriggerOnRemove(K key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
-            OnRemove?.Invoke(this, new CacheActionEventArgs(key, region, origin));
+            NotNull(key, nameof(key));
+            OnRemove?.Invoke(this, new CacheActionEventArgs<K>(key, region, origin));
         }
 
-        private void TriggerOnRemoveByHandle(string key, string region, CacheItemRemovedReason reason, int level, object value)
+        private void TriggerOnRemoveByHandle(K key, string region, CacheItemRemovedReason reason, int level, object value)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
-            OnRemoveByHandle?.Invoke(this, new CacheItemRemovedEventArgs(key, region, reason, value, level));
+            NotNull(key, nameof(key));
+            OnRemoveByHandle?.Invoke(this, new CacheItemRemovedEventArgs<K>(key, region, reason, value, level));
         }
 
-        private void TriggerOnUpdate(string key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
+        private void TriggerOnUpdate(K key, string region, CacheActionEventArgOrigin origin = CacheActionEventArgOrigin.Local)
         {
-            OnUpdate?.Invoke(this, new CacheActionEventArgs(key, region, origin));
+            OnUpdate?.Invoke(this, new CacheActionEventArgs<K>(key, region, origin));
         }
     }
 }

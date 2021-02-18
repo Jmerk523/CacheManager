@@ -7,7 +7,7 @@ namespace CacheManager.Core
     /// <summary>
     /// The basic cache manager configuration class.
     /// </summary>
-    public sealed class CacheManagerConfiguration : ICacheManagerConfiguration
+    public sealed class CacheManagerConfiguration<K> : ICacheManagerConfiguration<K>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CacheManagerConfiguration"/> class.
@@ -21,7 +21,7 @@ namespace CacheManager.Core
         /// to manipulate the configuration fluently.
         /// </summary>
         /// <returns>The <see cref="ConfigurationBuilder"/>.</returns>
-        public ConfigurationBuilder Builder => new ConfigurationBuilder(this);
+        public ConfigurationBuilder<K> Builder => new ConfigurationBuilder<K>(this);
 
         /// <summary>
         /// Gets or sets the name of the cache.
@@ -119,7 +119,7 @@ namespace CacheManager.Core
         /// Gets the list of cache handle configurations.
         /// </summary>
         /// <value>The list of cache handle configurations.</value>
-        public IList<CacheHandleConfiguration> CacheHandleConfigurations { get; } = new List<CacheHandleConfiguration>();
+        public IList<CacheHandleConfiguration<K>> CacheHandleConfigurations { get; } = new List<CacheHandleConfiguration<K>>();
 
         /// <inheritdoc />
         public override string ToString()

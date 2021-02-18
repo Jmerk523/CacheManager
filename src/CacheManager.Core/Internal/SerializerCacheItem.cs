@@ -9,7 +9,7 @@ namespace CacheManager.Core.Internal
     /// Simple converter contract used by the serializer cache item. Serializers will use that to convert back to
     /// The <see cref="CacheItem{T}"/>.
     /// </summary>
-    public interface ICacheItemConverter
+    public interface ICacheItemConverter<K>
     {
         /// <summary>
         /// Converts the current instance to a <see cref="CacheItem{T}"/>.
@@ -17,7 +17,11 @@ namespace CacheManager.Core.Internal
         /// </summary>
         /// <typeparam name="TTarget">The type.</typeparam>
         /// <returns>The cache item.</returns>
-        CacheItem<TTarget> ToCacheItem<TTarget>();
+        CacheItem<K, TTarget> ToCacheItem<TTarget>();
+    }
+
+    public interface ICacheItemConverter : ICacheItemConverter<string>
+    {
     }
 
     /// <summary>
@@ -27,12 +31,12 @@ namespace CacheManager.Core.Internal
 
     [Serializable]
     [DataContract]
-    public abstract class SerializerCacheItem<T> : ICacheItemConverter
+    public abstract class SerializerCacheItem<K, T> : ICacheItemConverter<K>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="SerializerCacheItem{T}"/> class.
         /// </summary>
-        public SerializerCacheItem()
+        protected SerializerCacheItem()
         {
         }
 
@@ -41,8 +45,7 @@ namespace CacheManager.Core.Internal
         /// </summary>
         /// <param name="properties">The actual properties.</param>
         /// <param name="value">The cache value.</param>
-        public SerializerCacheItem(ICacheItemProperties properties, object value)
-            : this()
+        protected SerializerCacheItem(ICacheItemProperties<K> properties, object value)
         {
             Guard.NotNull(properties, nameof(properties));
             Guard.NotNull(value, nameof(value));
@@ -82,7 +85,7 @@ namespace CacheManager.Core.Internal
         /// Gets or sets the key.
         /// </summary>
         [DataMember]
-        public abstract string Key { get; set; }
+        public abstract K Key { get; set; }
 
         /// <summary>
         /// Gets or sets the last accessed utc date in ticks.
@@ -116,11 +119,11 @@ namespace CacheManager.Core.Internal
         public abstract T Value { get; set; }
 
         /// <inheritdoc/>
-        public CacheItem<TTarget> ToCacheItem<TTarget>()
+        public CacheItem<K, TTarget> ToCacheItem<TTarget>()
         {
             var item = string.IsNullOrWhiteSpace(Region) ?
-                new CacheItem<TTarget>(Key, (TTarget)(object)Value) :
-                new CacheItem<TTarget>(Key, Region, (TTarget)(object)Value);
+                new CacheItem<K, TTarget>(Key, (TTarget)(object)Value) :
+                new CacheItem<K, TTarget>(Key, Region, (TTarget)(object)Value);
 
             // resetting expiration in case the serializer actually stores serialization properties (Redis does for example).
             if (!UsesExpirationDefaults)
@@ -146,6 +149,17 @@ namespace CacheManager.Core.Internal
             item.LastAccessedUtc = new DateTime(LastAccessedUtc, DateTimeKind.Utc);
 
             return item.WithCreated(new DateTime(CreatedUtc, DateTimeKind.Utc));
+        }
+    }
+
+    public abstract class SerializerCacheItem<T> : SerializerCacheItem<string, T>
+    {
+        protected SerializerCacheItem()
+        {
+        }
+
+        protected SerializerCacheItem(ICacheItemProperties properties, object value) : base(properties, value)
+        {
         }
     }
 }

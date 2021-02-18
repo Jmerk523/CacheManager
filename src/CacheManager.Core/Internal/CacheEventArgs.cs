@@ -48,7 +48,7 @@ namespace CacheManager.Core.Internal
     /// <summary>
     /// Event arguments for cache actions.
     /// </summary>
-    public sealed class CacheItemRemovedEventArgs : EventArgs
+    public class CacheItemRemovedEventArgs<K> : EventArgs
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CacheItemRemovedEventArgs"/> class.
@@ -59,9 +59,9 @@ namespace CacheManager.Core.Internal
         /// <param name="value">The original cached value which got removed. Might be null depending on the cache sub system.</param>
         /// <param name="level">The cache level the event got triggered by.</param>
         /// <exception cref="System.ArgumentNullException">If key is null.</exception>
-        public CacheItemRemovedEventArgs(string key, string region, CacheItemRemovedReason reason, object value, int level = 0)
+        public CacheItemRemovedEventArgs(K key, string region, CacheItemRemovedReason reason, object value, int level = 0)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
 
             Reason = reason;
             Key = key;
@@ -74,7 +74,7 @@ namespace CacheManager.Core.Internal
         /// Gets the key.
         /// </summary>
         /// <value>The key.</value>
-        public string Key { get; }
+        public K Key { get; }
 
         /// <summary>
         /// Gets the region.
@@ -108,10 +108,17 @@ namespace CacheManager.Core.Internal
         }
     }
 
+    public class CacheItemRemovedEventArgs : CacheItemRemovedEventArgs<string>
+    {
+        public CacheItemRemovedEventArgs(string key, string region, CacheItemRemovedReason reason, object value, int level = 0) : base(key, region, reason, value, level)
+        {
+        }
+    }
+
     /// <summary>
     /// Event arguments for cache actions.
     /// </summary>
-    public sealed class CacheActionEventArgs : EventArgs
+    public class CacheActionEventArgs<K> : EventArgs
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="CacheActionEventArgs"/> class.
@@ -119,9 +126,9 @@ namespace CacheManager.Core.Internal
         /// <param name="key">The key.</param>
         /// <param name="region">The region.</param>
         /// <exception cref="System.ArgumentNullException">If key is null.</exception>
-        public CacheActionEventArgs(string key, string region)
+        public CacheActionEventArgs(K key, string region)
         {
-            NotNullOrWhiteSpace(key, nameof(key));
+            NotNull(key, nameof(key));
 
             Key = key;
             Region = region;
@@ -134,7 +141,7 @@ namespace CacheManager.Core.Internal
         /// <param name="region">The region.</param>
         /// <param name="origin">The origin the event ocured. If remote, the event got triggered by the backplane and was not actually excecuted locally.</param>
         /// <exception cref="System.ArgumentNullException">If key is null.</exception>
-        public CacheActionEventArgs(string key, string region, CacheActionEventArgOrigin origin)
+        public CacheActionEventArgs(K key, string region, CacheActionEventArgOrigin origin)
             : this(key, region)
         {
             Origin = origin;
@@ -144,7 +151,7 @@ namespace CacheManager.Core.Internal
         /// Gets the key.
         /// </summary>
         /// <value>The key.</value>
-        public string Key { get; }
+        public K Key { get; }
 
         /// <summary>
         /// Gets the region.
@@ -161,6 +168,17 @@ namespace CacheManager.Core.Internal
         public override string ToString()
         {
             return $"CacheActionEventArgs {Region}:{Key} - {Origin}";
+        }
+    }
+
+    public class CacheActionEventArgs : CacheActionEventArgs<string>
+    {
+        public CacheActionEventArgs(string key, string region) : base(key, region)
+        {
+        }
+
+        public CacheActionEventArgs(string key, string region, CacheActionEventArgOrigin origin) : base(key, region, origin)
+        {
         }
     }
 

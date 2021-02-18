@@ -13,7 +13,7 @@ namespace CacheManager.Core.Internal
     /// and serialization is needed (only distributed caches will have to serialize the cache value).
     /// Binary serialization will not be available in some environments.
     /// </summary>
-    public class BinaryCacheSerializer : ICacheSerializer
+    public class BinaryCacheSerializer<K> : ICacheSerializer<K>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BinaryCacheSerializer"/> class.
@@ -69,8 +69,8 @@ namespace CacheManager.Core.Internal
         }
 
         /// <inheritdoc/>
-        public CacheItem<T> DeserializeCacheItem<T>(byte[] value, Type valueType)
-            => (CacheItem<T>)Deserialize(value, valueType);
+        public CacheItem<K, T> DeserializeCacheItem<T>(byte[] value, Type valueType)
+            => (CacheItem<K, T>)Deserialize(value, valueType);
 
         /// <inheritdoc/>
         public byte[] Serialize<T>(T value)
@@ -89,7 +89,7 @@ namespace CacheManager.Core.Internal
         }
 
         /// <inheritdoc/>
-        public byte[] SerializeCacheItem<T>(CacheItem<T> value)
+        public byte[] SerializeCacheItem<T>(CacheItem<K, T> value)
             => Serialize(value);
     }
 }

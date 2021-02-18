@@ -7,7 +7,7 @@ namespace CacheManager.Core.Internal
     /// <summary>
     /// Base implementation for cache serializers.
     /// </summary>
-    public abstract class CacheSerializer : ICacheSerializer
+    public abstract class CacheSerializer<K> : ICacheSerializer<K>
     {
         /// <summary>
         /// Returns the open generic type of this class.
@@ -24,7 +24,7 @@ namespace CacheManager.Core.Internal
         /// <param name="value">The actual cache item value.</param>
         /// <returns>The serializer specific cache item instance.</returns>
         /// <typeparam name="TCacheValue">The cache value type.</typeparam>
-        protected abstract object CreateNewItem<TCacheValue>(ICacheItemProperties properties, object value);
+        protected abstract object CreateNewItem<TCacheValue>(ICacheItemProperties<K> properties, object value);
 
         /// <inheritdoc/>
         public abstract byte[] Serialize<T>(T value);
@@ -33,7 +33,7 @@ namespace CacheManager.Core.Internal
         public abstract object Deserialize(byte[] data, Type target);
 
         /// <inheritdoc/>
-        public virtual byte[] SerializeCacheItem<T>(CacheItem<T> value)
+        public virtual byte[] SerializeCacheItem<T>(CacheItem<K, T> value)
         {
             Guard.NotNull(value, nameof(value));
             var item = CreateFromCacheItem(value);
@@ -41,27 +41,31 @@ namespace CacheManager.Core.Internal
         }
 
         /// <inheritdoc/>
-        public virtual CacheItem<T> DeserializeCacheItem<T>(byte[] value, Type valueType)
+        public virtual CacheItem<K, T> DeserializeCacheItem<T>(byte[] value, Type valueType)
         {
             var targetType = GetOpenGeneric().MakeGenericType(valueType);
-            var item = (ICacheItemConverter)Deserialize(value, targetType);
+            var item = (ICacheItemConverter<K>)Deserialize(value, targetType);
 
             return item?.ToCacheItem<T>();
         }
 
-        private object CreateFromCacheItem<TCacheValue>(CacheItem<TCacheValue> source)
+        private object CreateFromCacheItem<TCacheValue>(CacheItem<K, TCacheValue> source)
         {
             var tType = typeof(TCacheValue);
 
             if (tType != source.ValueType || tType == TypeCache.ObjectType)
             {
                 var targetType = GetOpenGeneric().MakeGenericType(source.ValueType);
-                return Activator.CreateInstance(targetType, (ICacheItemProperties)source, source.Value);
+                return Activator.CreateInstance(targetType, (ICacheItemProperties<K>)source, source.Value);
             }
             else
             {
-                return CreateNewItem<TCacheValue>((ICacheItemProperties)source, source.Value);
+                return CreateNewItem<TCacheValue>((ICacheItemProperties<K>)source, source.Value);
             }
         }
+    }
+
+    public abstract class CacheSerializer : CacheSerializer<string>, ICacheSerializer
+    {
     }
 }

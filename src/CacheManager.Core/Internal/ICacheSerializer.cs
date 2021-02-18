@@ -8,7 +8,7 @@ namespace CacheManager.Core.Internal
     /// technology does not support immutable objects; in that case <see cref="CacheItem{T}"/> might not
     /// be serializable directly and the implementation has to wrap the cache item.
     /// </summary>
-    public interface ICacheSerializer
+    public interface ICacheSerializer<K>
     {
         /// <summary>
         /// Serializes the given <paramref name="value"/> and returns the serialized data as byte array.
@@ -32,7 +32,7 @@ namespace CacheManager.Core.Internal
         /// <typeparam name="T">The type of the cache value.</typeparam>
         /// <param name="value">The value to serialize.</param>
         /// <returns>The serialized result.</returns>
-        byte[] SerializeCacheItem<T>(CacheItem<T> value);
+        byte[] SerializeCacheItem<T>(CacheItem<K, T> value);
 
         /// <summary>
         /// Deserializes the <paramref name="value"/> into a <see cref="CacheItem{T}"/>.
@@ -44,6 +44,10 @@ namespace CacheManager.Core.Internal
         /// <param name="value">The data to deserialize from.</param>
         /// <param name="valueType">The type of the actual serialized cache value.</param>
         /// <returns>The deserialized cache item.</returns>
-        CacheItem<T> DeserializeCacheItem<T>(byte[] value, Type valueType);
+        CacheItem<K, T> DeserializeCacheItem<T>(byte[] value, Type valueType);
+    }
+
+    public interface ICacheSerializer : ICacheSerializer<string>
+    {
     }
 }

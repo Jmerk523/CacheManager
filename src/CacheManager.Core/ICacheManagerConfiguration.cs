@@ -6,26 +6,26 @@ namespace CacheManager.Core
     /// <summary>
     /// The writable configuration contract used primarrily internal only
     /// </summary>
-    public interface ICacheManagerConfiguration : IReadOnlyCacheManagerConfiguration
+    public interface ICacheManagerConfiguration<K> : IReadOnlyCacheManagerConfiguration<K>
     {
         /// <summary>
         /// Gets the list of cache handle configurations.
         /// </summary>
         /// <value>The list of cache handle configurations.</value>
-        IList<CacheHandleConfiguration> CacheHandleConfigurations { get; }
+        IList<CacheHandleConfiguration<K>> CacheHandleConfigurations { get; }
 
         /// <summary>
         /// Gets a <see cref="ConfigurationBuilder"/> for the current <see cref="CacheManagerConfiguration"/> instance
         /// to manipulate the configuration fluently.
         /// </summary>
         /// <returns>The <see cref="ConfigurationBuilder"/>.</returns>
-        ConfigurationBuilder Builder { get; }
+        ConfigurationBuilder<K> Builder { get; }
     }
 
     /// <summary>
     /// The readonly configuration contract for cache managers.
     /// </summary>
-    public interface IReadOnlyCacheManagerConfiguration
+    public interface IReadOnlyCacheManagerConfiguration<K>
     {
         /// <summary>
         /// Gets the backplane channel name.
